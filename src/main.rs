@@ -6,7 +6,15 @@ mod commands;
 mod png;
 
 use anyhow::{Context, Result};
+use clap::Parser;
 
 fn main() -> Result<()> {
-    todo!()
+    let cli = args::Cli::parse();
+    match &cli.mode {
+        args::PngMeArgs::Encode(e) => commands::encode(e),
+        args::PngMeArgs::Decode(d) => commands::decode(d),
+        args::PngMeArgs::Remove(r) => commands::remove(r),
+        args::PngMeArgs::Print(p) => commands::print_chunks(p),
+    }?;
+    Ok(())
 }
