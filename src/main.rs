@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports)]
 mod args;
 mod chunk;
 mod chunk_type;
