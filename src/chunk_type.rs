@@ -4,23 +4,25 @@ use std::fmt;
 use std::str::from_utf8;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Eq)]
-struct ChunkType {
-    chunk_type: u32,
+use crate::chunk::Chunk;
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct ChunkType {
+    pub chunk_type: u32,
 }
 
 impl ChunkType {
-    fn bytes(&self) -> [u8; 4] {
+    pub fn bytes(&self) -> [u8; 4] {
         self.chunk_type.to_be_bytes()
     }
-    fn get_bit_at(input: u32, n: u8) -> bool {
+    pub fn get_bit_at(input: u32, n: u8) -> bool {
         if n < 32 {
             input & (1 << n) != 0
         } else {
             false
         }
     }
-    fn is_valid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         let all_chars_valid = self
             .chunk_type
             .to_be_bytes()
@@ -28,27 +30,31 @@ impl ChunkType {
             .all(|&b| (b as char).is_alphabetic());
         all_chars_valid && self.is_reserved_bit_valid()
     }
-    fn is_critical(&self) -> bool {
+    pub fn is_critical(&self) -> bool {
         !ChunkType::get_bit_at(self.chunk_type, 29)
     }
-    fn is_public(&self) -> bool {
+    pub fn is_public(&self) -> bool {
         !ChunkType::get_bit_at(self.chunk_type, 21)
     }
-    fn is_reserved_bit_valid(&self) -> bool {
+    pub fn is_reserved_bit_valid(&self) -> bool {
         !ChunkType::get_bit_at(self.chunk_type, 13)
     }
-    fn is_safe_to_copy(&self) -> bool {
+    pub fn is_safe_to_copy(&self) -> bool {
         ChunkType::get_bit_at(self.chunk_type, 5)
     }
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = &'static str;
+    type Error = anyhow::Error;
 
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
-        Ok(ChunkType {
+        let chunk_type = Self {
             chunk_type: u32::from_be_bytes(value),
-        })
+        };
+        match chunk_type.is_valid() {
+            true => Ok(chunk_type),
+            false => Err(anyhow!("Chunk type bytes were not valid")),
+        }
     }
 }
 
